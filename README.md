@@ -1,6 +1,14 @@
-# SevilAI - RAG-Based Knowledge Engine
+# SevilAI - RAG-Based AI Knowledge Engine
 
-A portfolio-grade, production-ready knowledge engine that answers questions about Sevil Aydın's professional profile using Retrieval-Augmented Generation (RAG).
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://sevilai.streamlit.app/)
+
+A portfolio-grade, production-ready knowledge engine that answers questions about Sevil Aydin's professional profile using Retrieval-Augmented Generation (RAG).
+
+## Live Demo
+
+**Try it now:** [https://sevilai.streamlit.app/](https://sevilai.streamlit.app/)
+
+Ask me anything about my career, projects, skills, and experience!
 
 ## Overview
 
@@ -19,6 +27,8 @@ SevilAI/
 │   ├── SevilAI.Application/   # Business logic, services, DTOs
 │   ├── SevilAI.Domain/        # Entities, interfaces, value objects
 │   └── SevilAI.Infrastructure/# Repositories, embeddings, LLM providers
+├── streamlit/
+│   └── app.py                 # Streamlit Chat UI (deployed)
 ├── tests/
 │   └── SevilAI.Tests/         # Unit tests (xUnit + FluentAssertions)
 └── docker/
@@ -34,6 +44,17 @@ The project follows Clean Architecture principles:
 - **Application Layer**: Use cases, DTOs, service interfaces
 - **Infrastructure Layer**: PostgreSQL repositories, embedding service, LLM providers
 - **API Layer**: REST endpoints, configuration, middleware
+
+## Technology Stack
+
+| Layer | Technology |
+|-------|------------|
+| **Backend** | .NET 8, ASP.NET Core Web API |
+| **Database** | PostgreSQL 16 with pgvector extension |
+| **Vector Search** | Cosine similarity on 384-dimensional embeddings |
+| **LLM** | Groq API (llama-3.3-70b-versatile) |
+| **Frontend** | Streamlit (Python) |
+| **Deployment** | Streamlit Community Cloud |
 
 ## Features
 
@@ -68,25 +89,13 @@ Response:
 }
 ```
 
-### 2. Effort Estimation
+### 2. Projects
 
-```http
-POST /api/estimate
-{
-  "projectDescription": "Build a REST API with authentication",
-  "requiredFeatures": ["authentication", "CRUD operations", "logging"],
-  "techStack": [".NET 8", "PostgreSQL", "Docker"],
-  "constraints": ["security compliance"],
-  "detailedBreakdown": true
-}
-```
-
-Response includes:
-- Day-by-day estimates (min/max/recommended)
-- Phase breakdown (Planning, Development, Testing, Deployment)
-- Assumptions and risks
-- Recommended technologies
-- Confidence score
+| Project | Type | Stack |
+|---------|------|-------|
+| **SevilAI** | AI Knowledge Engine | .NET 8, PostgreSQL, Vector Search, RAG, Groq API |
+| **E-Commerce Microservices** | Distributed System | .NET 8, Docker, RabbitMQ, Saga Pattern |
+| **System Test Tool** | Enterprise (NDA) | .NET 6, DevExpress, Protocol-based models |
 
 ### 3. Answer Generation Modes
 
@@ -95,78 +104,39 @@ Response includes:
 | **LLM** | Natural language generation using retrieved context | Production with API key |
 | **NoLLM** | Template-based response builder | Free/offline usage |
 
-The system enforces grounding rules:
-- Uses **only** retrieved snippets
-- Says "Not found in provided sources" when data is missing
-- Includes confidence score and source citations
-
-## Technology Stack
-
-- **Backend**: .NET 8, ASP.NET Core Web API
-- **Database**: PostgreSQL 16 with pgvector extension
-- **Vector Search**: Cosine similarity on 384-dimensional embeddings
-- **LLM Providers** (optional):
-  - Groq (free tier available)
-  - OpenRouter (free models available)
-  - Google Gemini (free tier available)
-
 ## Getting Started
 
-### Prerequisites
+### Quick Start (Local)
 
-- Docker & Docker Compose
-- .NET 8 SDK (for local development)
-
-### Quick Start with Docker
-
-1. **Clone and navigate**
+1. **Clone the repository**
    ```bash
+   git clone https://github.com/sevil62/SevilAI.git
    cd SevilAI
    ```
 
-2. **Start the services**
-   ```bash
-   cd docker
-   docker-compose up -d
-   ```
-
-3. **Seed the knowledge base**
-   ```bash
-   curl -X POST http://localhost:5000/api/seed/default
-   ```
-
-4. **Ask a question**
-   ```bash
-   curl -X POST http://localhost:5000/api/ask \
-     -H "Content-Type: application/json" \
-     -d '{"question": "What technologies does Sevil work with?"}'
-   ```
-
-5. **Open Swagger UI**
-   Navigate to http://localhost:5000
-
-### Local Development
-
-1. **Start PostgreSQL**
-   ```bash
-   cd docker
-   docker-compose up sevilai-db -d
-   ```
-
-2. **Configure connection**
-   Update `appsettings.Development.json` if needed.
-
-3. **Run the API**
+2. **Run the API**
    ```bash
    cd src/SevilAI.Api
-   dotnet run
+   dotnet run --urls "http://localhost:5159"
    ```
 
-4. **Run tests**
+3. **Run Streamlit UI**
    ```bash
-   cd tests/SevilAI.Tests
-   dotnet test
+   cd streamlit
+   pip install -r requirements.txt
+   export GROQ_API_KEY="your-groq-api-key"
+   streamlit run app.py
    ```
+
+4. **Open in browser**
+   Navigate to http://localhost:8501
+
+### Docker Deployment
+
+```bash
+cd docker
+docker-compose up -d
+```
 
 ## Configuration
 
@@ -174,14 +144,13 @@ The system enforces grounding rules:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
+| `GROQ_API_KEY` | Groq API key for LLM | Required |
 | `ConnectionStrings__DefaultConnection` | PostgreSQL connection string | localhost |
-| `LLMSettings__Provider` | LLM provider (groq/openrouter/gemini/none) | none |
-| `LLMSettings__ApiKey` | API key for LLM provider | - |
-| `EmbeddingSettings__Dimensions` | Embedding vector dimensions | 384 |
 
-### LLM Provider Setup
+### LLM Provider Setup (Groq - Free)
 
-#### Groq (Recommended - Free)
+Get your free API key at [console.groq.com](https://console.groq.com)
+
 ```json
 {
   "LLMSettings": {
@@ -194,105 +163,35 @@ The system enforces grounding rules:
 }
 ```
 
-#### OpenRouter
-```json
-{
-  "LLMSettings": {
-    "Provider": "openrouter",
-    "OpenRouter": {
-      "ApiKey": "your-openrouter-api-key",
-      "Model": "meta-llama/llama-3.3-70b-instruct:free"
-    }
-  }
-}
-```
-
 ## API Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/ask` | POST | Ask a question about the knowledge base |
-| `/api/ask/examples` | GET | Get example questions |
 | `/api/estimate` | POST | Estimate project effort |
-| `/api/estimate/guidelines` | GET | Get estimation guidelines |
-| `/api/seed` | POST | Seed knowledge base with JSON |
 | `/api/seed/default` | POST | Seed from embedded resource |
 | `/api/health` | GET | System health and stats |
-| `/api/health/live` | GET | Liveness probe |
-| `/api/health/ready` | GET | Readiness probe |
 
-## Seeding Custom Data
+## About Me
 
-You can seed your own knowledge base by POSTing JSON to `/api/seed`:
+**Sevil Aydin** - Software Engineer
 
-```json
-{
-  "jsonData": "{\"person\": {...}, \"careerJourney\": [...]}",
-  "clearExisting": true
-}
-```
+- Currently at CTECH (Defense Industry)
+- Focus: .NET, C#, System Integration, Distributed Systems
+- Lead developer and architect of System Test Tool
+- 8+ years engineering experience, 2+ years in software
 
-The schema supports:
-- `person` - Name, title, location, focus areas, career goals
-- `character` - Work ethic, traits, team style
-- `careerJourney` - Work experiences with impact and contributions
-- `enterpriseProject` - Confidential project details
-- `personalProjects` - Portfolio projects
-- `effortProfile` - Productivity characteristics
-
-## NDA & Confidentiality
-
-This system is designed for professional use with NDA considerations:
-
-- **No source code** from confidential projects is stored
-- Only **sanitized summaries** of architecture and responsibilities
-- When discussing confidential work, responses include:
-  > "Due to NDA/company policy, specific source code and client details cannot be shared."
+### Career Goals
+- Become a Solution/Backend Architect for mission-critical systems
+- Design event-driven and data-intensive distributed platforms
+- Build hybrid systems combining AI with classical backend architectures
 
 ## Testing
 
-The project includes comprehensive tests:
-
 ```bash
-dotnet test --verbosity normal
+cd tests/SevilAI.Tests
+dotnet test
 ```
-
-Test coverage includes:
-- **ChunkingServiceTests** - Text chunking and tokenization
-- **EffortEstimationServiceTests** - Estimation accuracy and factors
-- **LocalEmbeddingServiceTests** - Embedding generation and similarity
-- **QuestionAnsweringServiceTests** - RAG pipeline and response formatting
-- **PromptSafetyTests** - Injection prevention and grounding
-
-## Database Schema
-
-```sql
--- Core tables
-documents       -- Source documents (CV, notes, etc.)
-chunks          -- Document chunks for retrieval
-embeddings      -- Vector embeddings (384 dimensions)
-skills          -- Structured skill data
-experiences     -- Work experience records
-projects        -- Personal and enterprise projects
-query_logs      -- Query analytics
-```
-
-Vector similarity search uses `pgvector` with IVFFlat index for efficient cosine distance queries.
-
-## Performance Considerations
-
-- **Embedding generation**: Local hash-based (fast, no API calls)
-- **Vector search**: IVFFlat index for O(log n) similarity search
-- **Chunking**: 500 tokens max with 50 token overlap
-- **Caching**: Consider adding Redis for production
-
-## Contributing
-
-This is a portfolio project demonstrating:
-- Clean Architecture in .NET
-- RAG implementation with vector search
-- Professional API design
-- Comprehensive testing practices
 
 ## License
 
@@ -300,4 +199,6 @@ MIT License - See LICENSE file for details.
 
 ---
 
-Built with .NET 8 | PostgreSQL | pgvector | Clean Architecture
+Built with .NET 8 | PostgreSQL | pgvector | Groq | Streamlit
+
+[Live Demo](https://sevilai.streamlit.app/) | [GitHub](https://github.com/sevil62/SevilAI)
