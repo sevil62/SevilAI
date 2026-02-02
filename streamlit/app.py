@@ -2,10 +2,12 @@
 import streamlit as st
 import json
 import os
+import requests
 from groq import Groq
 
-# Configuration
+# Configuration - Multiple API providers for fallback
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 
 # Full Knowledge Base
 KNOWLEDGE_BASE = {
@@ -380,25 +382,13 @@ if "pending_question" in st.session_state:
     with st.chat_message("assistant"):
         with st.spinner("Düşünüyorum..."):
             try:
-                if GROQ_API_KEY:
-                    client = Groq(api_key=GROQ_API_KEY)
+                # Build conversation history
+                conv_messages = []
+                for msg in st.session_state.messages[:-1]:  # Exclude the just-added user message
+                    conv_messages.append({"role": msg["role"], "content": msg["content"]})
+                conv_messages.append({"role": "user", "content": user_input})
 
-                    # Build conversation history
-                    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-                    for msg in st.session_state.messages[:-1]:  # Exclude the just-added user message
-                        messages.append({"role": msg["role"], "content": msg["content"]})
-                    messages.append({"role": "user", "content": user_input})
-
-                    response = client.chat.completions.create(
-                        model="llama-3.3-70b-versatile",
-                        messages=messages,
-                        temperature=0.4,
-                        max_tokens=2048
-                    )
-                    answer = response.choices[0].message.content
-                else:
-                    answer = "API anahtarı yapılandırılmamış. Lütfen GROQ_API_KEY environment variable'ı ayarlayın."
-
+                answer, provider = call_llm_with_fallback(conv_messages, SYSTEM_PROMPT)
                 st.write(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
             except Exception as e:
@@ -417,25 +407,13 @@ if prompt := st.chat_input("Sevil'e bir soru sorun..."):
     with st.chat_message("assistant"):
         with st.spinner("Düşünüyorum..."):
             try:
-                if GROQ_API_KEY:
-                    client = Groq(api_key=GROQ_API_KEY)
+                # Build conversation history
+                conv_messages = []
+                for msg in st.session_state.messages[:-1]:
+                    conv_messages.append({"role": msg["role"], "content": msg["content"]})
+                conv_messages.append({"role": "user", "content": prompt})
 
-                    # Build conversation history
-                    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-                    for msg in st.session_state.messages[:-1]:
-                        messages.append({"role": msg["role"], "content": msg["content"]})
-                    messages.append({"role": "user", "content": prompt})
-
-                    response = client.chat.completions.create(
-                        model="llama-3.3-70b-versatile",
-                        messages=messages,
-                        temperature=0.4,
-                        max_tokens=2048
-                    )
-                    answer = response.choices[0].message.content
-                else:
-                    answer = "API anahtarı yapılandırılmamış. Lütfen GROQ_API_KEY environment variable'ı ayarlayın."
-
+                answer, provider = call_llm_with_fallback(conv_messages, SYSTEM_PROMPT)
                 st.write(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
             except Exception as e:
@@ -451,6 +429,60 @@ if st.session_state.messages:
         if st.button("Sohbeti Temizle", use_container_width=True):
             st.session_state.messages = []
             st.rerun()
+
+def call_llm_with_fallback(messages, system_prompt):
+    """Try Groq first, fallback to OpenRouter if rate limited"""
+
+    # Try Groq first
+    if GROQ_API_KEY:
+        try:
+            client = Groq(api_key=GROQ_API_KEY)
+            all_messages = [{"role": "system", "content": system_prompt}] + messages
+            response = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=all_messages,
+                temperature=0.4,
+                max_tokens=2048
+            )
+            return response.choices[0].message.content, "groq"
+        except Exception as e:
+            error_str = str(e)
+            # If rate limited, try fallback
+            if "429" in error_str or "rate_limit" in error_str.lower():
+                pass  # Fall through to OpenRouter
+            else:
+                raise e
+
+    # Fallback to OpenRouter (free tier)
+    if OPENROUTER_API_KEY:
+        try:
+            headers = {
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://sevilai.streamlit.app",
+                "X-Title": "SevilAI"
+            }
+            all_messages = [{"role": "system", "content": system_prompt}] + messages
+            data = {
+                "model": "meta-llama/llama-3.3-70b-instruct:free",
+                "messages": all_messages,
+                "temperature": 0.4,
+                "max_tokens": 2048
+            }
+            response = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers=headers,
+                json=data,
+                timeout=60
+            )
+            response.raise_for_status()
+            result = response.json()
+            return result["choices"][0]["message"]["content"], "openrouter"
+        except Exception as e:
+            raise Exception(f"OpenRouter hatası: {str(e)}")
+
+    # No API keys configured
+    raise Exception("API anahtarı yapılandırılmamış. GROQ_API_KEY veya OPENROUTER_API_KEY ayarlayın.")
 
 # Footer
 st.markdown("""
