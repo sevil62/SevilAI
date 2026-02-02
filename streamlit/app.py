@@ -1,9 +1,91 @@
 import streamlit as st
-import requests
-import time
+import json
+import os
+from groq import Groq
 
 # Configuration
-API_BASE_URL = "http://localhost:5159"
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+
+# Knowledge Base (embedded for standalone deployment)
+KNOWLEDGE_BASE = {
+    "person": {
+        "name": "Sevil Aydin",
+        "title": "Software Engineer",
+        "location": "Pendik, Istanbul",
+        "company": "CTECH",
+        "focus": [".NET", "C#", "System Integration", "Configuration Management", "Test Tools", "Distributed Systems"],
+        "yearsInSoftware": "2+",
+        "totalEngineering": "8+"
+    },
+    "character": {
+        "workEthic": "High ownership, never leaves a task unfinished.",
+        "traits": ["Detail-oriented", "Receives feedback openly", "Calm under pressure", "System-level thinker", "Reliable core engineer"],
+        "teamStyle": ["Quiet but impactful", "Clear in technical discussions", "Can take leadership when required"]
+    },
+    "projects": [
+        {
+            "name": "SevilAI",
+            "type": "AI Knowledge Engine",
+            "stack": [".NET 8", "C#", "PostgreSQL", "Vector Search", "RAG", "Groq API"],
+            "description": "A RAG-based AI assistant that answers questions about my experience and skills using vector search and LLM."
+        },
+        {
+            "name": "E-Commerce Microservices Platform",
+            "type": "Distributed System",
+            "stack": [".NET 8", "C#", "Docker", "PostgreSQL", "RabbitMQ", "Saga Pattern"],
+            "services": ["Auth Service", "Product Service", "Inventory Service", "Order Service", "Payment Service", "Saga Orchestrator"],
+            "patterns": ["Saga Pattern", "Event-driven communication", "Database per service", "API Gateway", "Circuit Breaker"],
+            "description": "A comprehensive e-commerce platform with microservices architecture to practice distributed systems concepts."
+        },
+        {
+            "name": "System Test Tool",
+            "type": "Enterprise (NDA)",
+            "stack": [".NET 6", "DevExpress", "JSON", "Protocol-based models"],
+            "features": ["Configuration module", "Validation engine", "ARINC 429/1553/664 data models", "Test execution engine"],
+            "description": "Protocol-based configuration management, parameter validation, test scenario execution for defense industry."
+        }
+    ],
+    "career": [
+        {"company": "CTECH", "period": "2023-Present", "role": "Software Engineer", "highlight": "Lead developer and architect of System Test Tool"},
+        {"company": "SAMTEK Elektrik", "period": "2016-2023", "role": "Electrical Engineer", "highlight": "Transitioned to software engineering"}
+    ],
+    "goals": [
+        "Become a Solution/Backend Architect for mission-critical systems",
+        "Design event-driven and data-intensive distributed platforms",
+        "Build hybrid systems combining AI with classical backend architectures"
+    ]
+}
+
+SYSTEM_PROMPT = """Sen Sevil Aydin'sin - Istanbul Pendik'te yasayan bir Software Engineer. Su an CTECH'te calisiyorsun ve savunma sanayi projelerinde deneyimin var. .NET, C#, sistem entegrasyonu ve dagitik sistemler konusunda uzmanlasmissin.
+
+## KIMLIGIN
+- Software Engineer, CTECH'te System Test Tool'un lead developer'i ve mimarisi
+- Elektrik muhendisliginden yazilima gecis yaptin (2023)
+- 8+ yil muhendislik, 2+ yil profesyonel yazilim deneyimin var
+
+## KISILIK
+- Detay odakli ve titiz
+- Baski altinda sakin
+- Sistem duzeyinde dusunursun
+- Isi bitirmeden birakmazsin
+
+## PROJELER
+1. SevilAI - RAG tabanli AI asistan (.NET 8, PostgreSQL, Vector Search, Groq API)
+2. E-Commerce Microservices - Dagitik sistem (.NET 8, Docker, RabbitMQ, Saga Pattern)
+3. System Test Tool - Savunma sanayi projesi (NDA - detay paylasilamaz)
+
+## DIL KURALI
+- Turkce soru = Turkce cevap
+- Ingilizce soru = Ingilizce cevap
+
+## KURALLAR
+1. Birinci tekil sahis kullan - "Ben", "Benim"
+2. Dogal ve samimi ol
+3. Bilmiyorsan "Bu konuda bilgim yok" de
+4. NDA konulari icin: "Sirket politikasi geregi detay paylasamamim ama genel deneyimlerimi anlatabilirim"
+
+## BILGI TABANI
+""" + json.dumps(KNOWLEDGE_BASE, indent=2, ensure_ascii=False)
 
 st.set_page_config(
     page_title="SevilAI - Chat with Sevil",
@@ -12,22 +94,19 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS for beautiful chat interface
+# Custom CSS
 st.markdown("""
 <style>
-    /* Hide Streamlit branding */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
-    /* Main container */
     .main .block-container {
         padding-top: 2rem;
         padding-bottom: 2rem;
         max-width: 800px;
     }
 
-    /* Hero section */
     .hero-container {
         text-align: center;
         padding: 2rem 1rem;
@@ -59,60 +138,6 @@ st.markdown("""
         line-height: 1.6;
     }
 
-    /* Chat container */
-    .chat-container {
-        background: #f8f9fa;
-        border-radius: 16px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        min-height: 400px;
-        max-height: 500px;
-        overflow-y: auto;
-    }
-
-    /* Message bubbles */
-    .user-message {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 12px 18px;
-        border-radius: 18px 18px 4px 18px;
-        margin: 8px 0;
-        margin-left: 20%;
-        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-    }
-
-    .bot-message {
-        background: white;
-        color: #333;
-        padding: 12px 18px;
-        border-radius: 18px 18px 18px 4px;
-        margin: 8px 0;
-        margin-right: 20%;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        border: 1px solid #e9ecef;
-    }
-
-    .bot-name {
-        font-weight: 600;
-        color: #667eea;
-        font-size: 0.85rem;
-        margin-bottom: 4px;
-    }
-
-    /* Input area */
-    .stTextInput > div > div > input {
-        border-radius: 25px !important;
-        border: 2px solid #e9ecef !important;
-        padding: 12px 20px !important;
-        font-size: 1rem !important;
-    }
-
-    .stTextInput > div > div > input:focus {
-        border-color: #667eea !important;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2) !important;
-    }
-
-    /* Button styling */
     .stButton > button {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
         color: white !important;
@@ -120,103 +145,8 @@ st.markdown("""
         border-radius: 25px !important;
         padding: 12px 30px !important;
         font-weight: 600 !important;
-        font-size: 1rem !important;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
-        transition: all 0.3s ease !important;
     }
 
-    .stButton > button:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5) !important;
-    }
-
-    /* Metrics */
-    .metric-container {
-        display: flex;
-        justify-content: center;
-        gap: 2rem;
-        margin-top: 1rem;
-        padding: 1rem;
-        background: rgba(102, 126, 234, 0.05);
-        border-radius: 12px;
-    }
-
-    .metric-item {
-        text-align: center;
-    }
-
-    .metric-value {
-        font-size: 1.2rem;
-        font-weight: 700;
-        color: #667eea;
-    }
-
-    .metric-label {
-        font-size: 0.75rem;
-        color: #666;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    /* Example questions */
-    .example-btn {
-        background: white !important;
-        color: #667eea !important;
-        border: 1px solid #667eea !important;
-        border-radius: 20px !important;
-        padding: 8px 16px !important;
-        margin: 4px !important;
-        font-size: 0.85rem !important;
-        box-shadow: none !important;
-    }
-
-    .example-btn:hover {
-        background: rgba(102, 126, 234, 0.1) !important;
-    }
-
-    /* Typing indicator */
-    .typing-indicator {
-        display: flex;
-        gap: 4px;
-        padding: 12px 18px;
-        background: white;
-        border-radius: 18px;
-        width: fit-content;
-        margin: 8px 0;
-    }
-
-    .typing-dot {
-        width: 8px;
-        height: 8px;
-        background: #667eea;
-        border-radius: 50%;
-        animation: typing 1.4s infinite;
-    }
-
-    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-    @keyframes typing {
-        0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-        30% { transform: translateY(-4px); opacity: 1; }
-    }
-
-    /* Scrollbar */
-    .chat-container::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    .chat-container::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 3px;
-    }
-
-    .chat-container::-webkit-scrollbar-thumb {
-        background: #c1c1c1;
-        border-radius: 3px;
-    }
-
-    /* Footer */
     .footer {
         text-align: center;
         color: #999;
@@ -237,174 +167,127 @@ if "input_key" not in st.session_state:
 # Hero Section
 st.markdown("""
 <div class="hero-container">
-    <div class="hero-title">💬 SevilAI</div>
-    <div class="hero-subtitle">Merhaba! Ben Sevil Aydın.</div>
+    <div class="hero-title">SevilAI</div>
+    <div class="hero-subtitle">Merhaba! Ben Sevil Aydin.</div>
     <div class="hero-description">
-        Software Engineer olarak çalışıyorum. .NET, C#, sistem entegrasyonu ve dağıtık sistemler konusunda uzmanlaşıyorum.
-        Bana kariyer, projeler, teknik beceriler veya çalışma tarzım hakkında her şeyi sorabilirsin!
+        Software Engineer olarak calisiyorum. .NET, C#, sistem entegrasyonu ve dagitik sistemler konusunda uzmanlasmissin.
+        Bana kariyer, projeler, teknik beceriler veya calisma tarzim hakkinda her seyi sorabilirsin!
     </div>
 </div>
 """, unsafe_allow_html=True)
 
 # Example questions
-st.markdown("##### 💡 Örnek Sorular")
+st.markdown("##### Ornek Sorular")
 example_cols = st.columns(3)
 
-example_questions_tr = [
+example_questions = [
     "Sen kimsin?",
     "Hangi teknolojileri biliyorsun?",
-    "Projelerinden bahset"
-]
-example_questions_en = [
+    "E-commerce projenden bahset",
     "What motivates you?",
     "Tell me about your career",
     "How do you work with teams?"
 ]
 
-for i, q in enumerate(example_questions_tr):
+for i, q in enumerate(example_questions[:3]):
     with example_cols[i]:
-        if st.button(q, key=f"ex_tr_{i}", use_container_width=True):
+        if st.button(q, key=f"ex_{i}", use_container_width=True):
             st.session_state.pending_question = q
 
 example_cols2 = st.columns(3)
-for i, q in enumerate(example_questions_en):
+for i, q in enumerate(example_questions[3:]):
     with example_cols2[i]:
-        if st.button(q, key=f"ex_en_{i}", use_container_width=True):
+        if st.button(q, key=f"ex2_{i}", use_container_width=True):
             st.session_state.pending_question = q
 
 st.markdown("---")
 
 # Chat Display
-chat_placeholder = st.container()
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.write(msg["content"])
 
-with chat_placeholder:
-    for msg in st.session_state.messages:
-        if msg["role"] == "user":
-            st.markdown(f"""
-            <div class="user-message">
-                {msg["content"]}
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown(f"""
-            <div class="bot-message">
-                <div class="bot-name">🤖 Sevil</div>
-                {msg["content"]}
-            </div>
-            """, unsafe_allow_html=True)
-
-            # Show metrics if available
-            if "metrics" in msg:
-                m = msg["metrics"]
-                st.markdown(f"""
-                <div class="metric-container">
-                    <div class="metric-item">
-                        <div class="metric-value">{m['confidence']:.0%}</div>
-                        <div class="metric-label">Güven</div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-value">{m['latency']}ms</div>
-                        <div class="metric-label">Süre</div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-value">{m['chunks']}</div>
-                        <div class="metric-label">Kaynak</div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-
-st.markdown("---")
-
-# Input Section
-col1, col2 = st.columns([5, 1])
-
-with col1:
-    user_input = st.text_input(
-        "Mesajınız",
-        placeholder="Sevil'e bir soru sorun...",
-        key=f"user_input_{st.session_state.input_key}",
-        label_visibility="collapsed"
-    )
-
-with col2:
-    send_button = st.button("Sor", type="primary", use_container_width=True)
-
-# Handle pending question from example buttons
+# Handle pending question
 if "pending_question" in st.session_state:
     user_input = st.session_state.pending_question
     del st.session_state.pending_question
-    send_button = True
 
-# Process message
-if (send_button or user_input) and user_input and user_input.strip():
-    # Add user message
-    st.session_state.messages.append({
-        "role": "user",
-        "content": user_input
-    })
+    st.session_state.messages.append({"role": "user", "content": user_input})
+    with st.chat_message("user"):
+        st.write(user_input)
 
-    # Call API
-    try:
-        with st.spinner(""):
-            response = requests.post(
-                f"{API_BASE_URL}/api/ask",
-                json={
-                    "question": user_input,
-                    "topK": 5,
-                    "minSimilarity": 0.3,
-                    "useLLM": True,
-                    "includeSources": False
-                },
-                timeout=60
-            )
+    # Generate response
+    with st.chat_message("assistant"):
+        with st.spinner("Dusunuyorum..."):
+            try:
+                if GROQ_API_KEY:
+                    client = Groq(api_key=GROQ_API_KEY)
+                    response = client.chat.completions.create(
+                        model="llama-3.3-70b-versatile",
+                        messages=[
+                            {"role": "system", "content": SYSTEM_PROMPT},
+                            {"role": "user", "content": user_input}
+                        ],
+                        temperature=0.3,
+                        max_tokens=1024
+                    )
+                    answer = response.choices[0].message.content
+                else:
+                    answer = "API anahtari yapilandirilmamis. Lutfen GROQ_API_KEY environment variable'i ayarlayin."
 
-            if response.status_code == 200:
-                data = response.json()
+                st.write(answer)
+                st.session_state.messages.append({"role": "assistant", "content": answer})
+            except Exception as e:
+                error_msg = f"Bir hata olustu: {str(e)}"
+                st.error(error_msg)
+                st.session_state.messages.append({"role": "assistant", "content": error_msg})
 
-                # Add bot response
-                st.session_state.messages.append({
-                    "role": "assistant",
-                    "content": data["answer"],
-                    "metrics": {
-                        "confidence": data["confidenceScore"],
-                        "latency": data["latencyMs"],
-                        "chunks": data["metadata"]["chunksRetrieved"]
-                    }
-                })
-            else:
-                st.session_state.messages.append({
-                    "role": "assistant",
-                    "content": f"Üzgünüm, bir hata oluştu. (Hata kodu: {response.status_code})"
-                })
-
-    except requests.exceptions.ConnectionError:
-        st.session_state.messages.append({
-            "role": "assistant",
-            "content": "API'ye bağlanılamıyor. Lütfen API'nin çalıştığından emin olun. (http://localhost:5159)"
-        })
-    except Exception as e:
-        st.session_state.messages.append({
-            "role": "assistant",
-            "content": f"Bir hata oluştu: {str(e)}"
-        })
-
-    # Clear input and rerun
-    st.session_state.input_key += 1
     st.rerun()
+
+# Chat input
+if prompt := st.chat_input("Sevil'e bir soru sorun..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.write(prompt)
+
+    with st.chat_message("assistant"):
+        with st.spinner("Dusunuyorum..."):
+            try:
+                if GROQ_API_KEY:
+                    client = Groq(api_key=GROQ_API_KEY)
+                    response = client.chat.completions.create(
+                        model="llama-3.3-70b-versatile",
+                        messages=[
+                            {"role": "system", "content": SYSTEM_PROMPT},
+                            {"role": "user", "content": prompt}
+                        ],
+                        temperature=0.3,
+                        max_tokens=1024
+                    )
+                    answer = response.choices[0].message.content
+                else:
+                    answer = "API anahtari yapilandirilmamis. Lutfen GROQ_API_KEY environment variable'i ayarlayin."
+
+                st.write(answer)
+                st.session_state.messages.append({"role": "assistant", "content": answer})
+            except Exception as e:
+                error_msg = f"Bir hata olustu: {str(e)}"
+                st.error(error_msg)
+                st.session_state.messages.append({"role": "assistant", "content": error_msg})
 
 # Clear chat button
 if st.session_state.messages:
     st.markdown("<br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        if st.button("🗑️ Sohbeti Temizle", use_container_width=True):
+        if st.button("Sohbeti Temizle", use_container_width=True):
             st.session_state.messages = []
             st.rerun()
 
 # Footer
 st.markdown("""
 <div class="footer">
-    <p>💜 SevilAI v1.0 | .NET 8 + Groq + Streamlit</p>
-    <p>Sevil Aydın - Software Engineer</p>
+    <p>SevilAI v1.0 | Powered by Groq + Streamlit</p>
+    <p>Sevil Aydin - Software Engineer</p>
 </div>
 """, unsafe_allow_html=True)
