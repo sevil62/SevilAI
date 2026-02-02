@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  sevilai-db:
+    image: pgvector/pgvector:pg16
+    container_name: sevilai-postgres
+    environment:
+      POSTGRES_USER: sevilai
+      POSTGRES_PASSWORD: sevilai_secret_2024
+      POSTGRES_DB: sevilai_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - sevilai_pgdata:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sevilai -d sevilai_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sevilai-network
+
+  sevilai-api:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    container_name: sevilai-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=sevilai-db;Port=5432;Database=sevilai_db;Username=sevilai;Password=sevilai_secret_2024
+      - LLMSettings__Provider=Groq
+      - LLMSettings__ApiKey=${GROQ_API_KEY:-}
+      - LLMSettings__Model=llama-3.3-70b-versatile
+      - EmbeddingSettings__Dimensions=384
+    ports:
+      - "5000:8080"
+    depends_on:
+      sevilai-db:
+        condition: service_healthy
+    networks:
+      - sevilai-network
+
+volumes:
+  sevilai_pgdata:
+
+networks:
+  sevilai-network:
+    driver: bridge

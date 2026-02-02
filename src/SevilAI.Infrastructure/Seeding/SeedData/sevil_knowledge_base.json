@@ -1,0 +1,170 @@
+{
+  "person": {
+    "name": "Sevil Aydın",
+    "title": "Software Engineer",
+    "location": "Pendik, İstanbul",
+    "focus": [
+      ".NET",
+      "C#",
+      "System Integration",
+      "Configuration Management",
+      "Test Tools",
+      "Distributed Systems"
+    ],
+    "careerGoal": {
+      "summary": "Sevil aims to design and lead critical, high-reliability systems across defense, aviation, finance, SaaS, and AI-powered platforms.",
+      "longTerm": [
+        "Become a Solution/Backend Architect for mission-critical systems",
+        "Design event-driven and data-intensive distributed platforms",
+        "Build hybrid systems combining AI with classical backend architectures",
+        "Take technology leadership roles in defense, finance, SaaS, and AI companies"
+      ]
+    }
+  },
+
+  "character": {
+    "workEthic": "High ownership, never leaves a task unfinished.",
+    "traits": [
+      "Detail-oriented",
+      "Receives feedback openly",
+      "Calm under pressure",
+      "System-level thinker",
+      "Reliable core engineer"
+    ],
+    "teamStyle": [
+      "Quiet but impactful",
+      "Clear in technical discussions",
+      "Can take leadership when required"
+    ]
+  },
+
+  "careerJourney": [
+    {
+      "company": "SAMTEK Elektrik",
+      "period": "2016-2023",
+      "role": "Electrical Engineer",
+      "impact": [
+        "Built discipline, documentation and process awareness",
+        "Worked with production, field and technical teams",
+        "Developed engineering mindset"
+      ],
+      "turningPoint": "Discovered passion for software engineering and started coding outside work hours."
+    },
+    {
+      "period": "2022",
+      "milestone": "Professional software transition",
+      "details": [
+        "Completed 1 year C#/.NET training",
+        "Built individual projects",
+        "Focused on backend, architecture and algorithms"
+      ]
+    },
+    {
+      "company": "CTECH",
+      "period": "2023-Present",
+      "role": "Software Engineer",
+      "team": "20+ multidisciplinary engineers",
+      "responsibility": "ST (Software Tool) lead developer and architect",
+      "contribution": [
+        "Designed full application architecture",
+        "Developed backend, UI, integration and data flows alone",
+        "One teammate wrote only unit tests"
+      ],
+      "tech": [ ".NET 6", "DevExpress", "JSON", "Protocol-based models" ],
+      "ndaNote": "Project names and client details are confidential."
+    }
+  ],
+
+  "enterpriseProject": {
+    "name": "System Test Tool",
+    "confidential": true,
+    "purpose": [
+      "Protocol-based configuration management",
+      "Parameter validation",
+      "Test scenario execution",
+      "Result analysis"
+    ],
+    "features": [
+      "Configuration module",
+      "Validation engine",
+      "JSON import/export",
+      "ARINC 429/1553/664 data models",
+      "Test execution engine",
+      "Device-application data exchange",
+      "Logging and verification"
+    ],
+    "stack": [ ".NET 6", "DevExpress", "C#", "JSON" ]
+  },
+
+  "personalProjects": [
+    {
+      "name": "SevilAI",
+      "type": "AI Knowledge Engine",
+      "stack": [ ".NET 8", "C#", "PostgreSQL", "Vector Search", "RAG" ],
+      "capabilities": [
+        "Answer questions about experience and skills",
+        "Estimate project efforts",
+        "Reason using retrieved knowledge"
+      ]
+    },
+    {
+      "name": "E-Commerce Microservices Platform",
+      "type": "Distributed System",
+      "description": "A comprehensive e-commerce platform built with microservices architecture to practice distributed systems concepts and patterns.",
+      "stack": [ ".NET 8", "C#", "Docker", "docker-compose", "PostgreSQL", "RabbitMQ", "Saga Pattern" ],
+      "services": [
+        {
+          "name": "Auth Service",
+          "purpose": "User authentication and authorization",
+          "features": ["JWT tokens", "User registration", "Login/logout", "Role-based access"]
+        },
+        {
+          "name": "Product Service",
+          "purpose": "Product catalog management",
+          "features": ["CRUD operations", "Product search", "Categories", "Product images"]
+        },
+        {
+          "name": "Inventory Service",
+          "purpose": "Stock management and availability",
+          "features": ["Stock tracking", "Reserve inventory", "Release inventory", "Low stock alerts"]
+        },
+        {
+          "name": "Order Service",
+          "purpose": "Order processing and management",
+          "features": ["Create orders", "Order status tracking", "Order history", "Cancel orders"]
+        },
+        {
+          "name": "Payment Service",
+          "purpose": "Payment processing",
+          "features": ["Process payments", "Refunds", "Payment verification", "Transaction history"]
+        },
+        {
+          "name": "Saga Orchestrator",
+          "purpose": "Distributed transaction coordination",
+          "features": ["Orchestrate multi-service transactions", "Handle failures", "Compensation workflows", "Event publishing"]
+        }
+      ],
+      "architecture": "Event-driven microservices with compensation workflows",
+      "patterns": [
+        "Saga Pattern for distributed transactions",
+        "Event-driven communication via RabbitMQ",
+        "Database per service",
+        "API Gateway pattern",
+        "Circuit Breaker for resilience"
+      ],
+      "learnings": [
+        "Handling distributed transaction failures",
+        "Implementing compensation logic",
+        "Service-to-service communication",
+        "Container orchestration with docker-compose",
+        "Event sourcing basics"
+      ]
+    }
+  ],
+
+  "effortProfile": {
+    "workRate": "90%+ efficiency during work hours",
+    "adaptability": "Fast learner, quick system setup",
+    "estimationStyle": "Depends on project complexity, prefers modular planning"
+  }
+}

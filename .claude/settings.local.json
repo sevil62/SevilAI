@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -Command:*)",
+      "Bash(taskkill /F /FI \"IMAGENAME eq SevilAI*\" /T)",
+      "Bash(taskkill:*)",
+      "Bash(timeout:*)",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet run:*)",
+      "Bash(streamlit run:*)"
+    ]
+  }
+}
