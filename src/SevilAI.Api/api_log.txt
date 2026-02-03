@@ -1,0 +1,108 @@
+warn: Microsoft.EntityFrameworkCore.Model.Validation[10620]
+      The property 'Embedding.Vector' is a collection or enumeration type with a value converter but with no value comparer. Set a value comparer to ensure the collection/enumeration elements are compared correctly.
+warn: Microsoft.EntityFrameworkCore.Model.Validation[10620]
+      The property 'Embedding.Vector' is a collection or enumeration type with a value converter but with no value comparer. Set a value comparer to ensure the collection/enumeration elements are compared correctly.
+info: Program[0]
+      In-memory database created
+info: Program[0]
+      Auto-seeding knowledge base...
+info: SevilAI.Infrastructure.Seeding.SeedingService[0]
+      Knowledge base seeded successfully
+info: SevilAI.Infrastructure.Seeding.SeedingService[0]
+      Training dataset seeded successfully
+info: Program[0]
+      Seeding completed: 49 documents, 49 chunks, 49 embeddings
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5159
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Production
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\Users\424\SevilAI\src\SevilAI.Api
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+info: SevilAI.Api.Controllers.AskController[0]
+      Received question: E-commerce projen hakkinda bilgi ver
+info: SevilAI.Application.Services.QuestionAnsweringService[0]
+      Processing question: E-commerce projen hakkinda bilgi ver
+info: SevilAI.Application.Services.QuestionAnsweringService[0]
+      Retrieved 5 relevant chunks
+info: System.Net.Http.HttpClient.ITextGenerator.LogicalHandler[100]
+      Start processing HTTP request POST https://api.groq.com/openai/v1/chat/completions
+info: System.Net.Http.HttpClient.ITextGenerator.ClientHandler[100]
+      Sending HTTP request POST https://api.groq.com/openai/v1/chat/completions
+info: System.Net.Http.HttpClient.ITextGenerator.ClientHandler[101]
+      Received HTTP response headers after 1300.4205ms - 200
+info: System.Net.Http.HttpClient.ITextGenerator.LogicalHandler[101]
+      End processing HTTP request after 1304.8739ms - 200
+info: SevilAI.Api.Controllers.AskController[0]
+      Received question: E-commerce projen hakkinda bilgi ver
+info: SevilAI.Application.Services.QuestionAnsweringService[0]
+      Processing question: E-commerce projen hakkinda bilgi ver
+info: SevilAI.Application.Services.QuestionAnsweringService[0]
+      Retrieved 5 relevant chunks
+info: System.Net.Http.HttpClient.ITextGenerator.LogicalHandler[100]
+      Start processing HTTP request POST https://api.groq.com/openai/v1/chat/completions
+info: System.Net.Http.HttpClient.ITextGenerator.ClientHandler[100]
+      Sending HTTP request POST https://api.groq.com/openai/v1/chat/completions
+info: System.Net.Http.HttpClient.ITextGenerator.ClientHandler[101]
+      Received HTTP response headers after 1632.413ms - 200
+info: System.Net.Http.HttpClient.ITextGenerator.LogicalHandler[101]
+      End processing HTTP request after 1632.5261ms - 200
+info: SevilAI.Api.Controllers.AskController[0]
+      Received question: Saga pattern'i neden kullandin?
+info: SevilAI.Application.Services.QuestionAnsweringService[0]
+      Processing question: Saga pattern'i neden kullandin?
+info: SevilAI.Application.Services.QuestionAnsweringService[0]
+      Retrieved 5 relevant chunks
+info: System.Net.Http.HttpClient.ITextGenerator.LogicalHandler[100]
+      Start processing HTTP request POST https://api.groq.com/openai/v1/chat/completions
+info: System.Net.Http.HttpClient.ITextGenerator.ClientHandler[100]
+      Sending HTTP request POST https://api.groq.com/openai/v1/chat/completions
+info: System.Net.Http.HttpClient.ITextGenerator.ClientHandler[101]
+      Received HTTP response headers after 1786.359ms - 200
+info: System.Net.Http.HttpClient.ITextGenerator.LogicalHandler[101]
+      End processing HTTP request after 1786.4686ms - 200
+info: SevilAI.Api.Controllers.AskController[0]
+      Received question: Sen kimsin?
+info: SevilAI.Application.Services.QuestionAnsweringService[0]
+      Processing question: Sen kimsin?
+info: SevilAI.Application.Services.QuestionAnsweringService[0]
+      Retrieved 5 relevant chunks
+info: System.Net.Http.HttpClient.ITextGenerator.LogicalHandler[100]
+      Start processing HTTP request POST https://api.groq.com/openai/v1/chat/completions
+info: System.Net.Http.HttpClient.ITextGenerator.ClientHandler[100]
+      Sending HTTP request POST https://api.groq.com/openai/v1/chat/completions
+info: System.Net.Http.HttpClient.ITextGenerator.ClientHandler[101]
+      Received HTTP response headers after 1805.2355ms - 200
+info: System.Net.Http.HttpClient.ITextGenerator.LogicalHandler[101]
+      End processing HTTP request after 1805.3688ms - 200
+info: SevilAI.Api.Controllers.AskController[0]
+      Received question: Hangi teknolojileri biliyorsun?
+info: SevilAI.Application.Services.QuestionAnsweringService[0]
+      Processing question: Hangi teknolojileri biliyorsun?
+info: SevilAI.Application.Services.QuestionAnsweringService[0]
+      Retrieved 5 relevant chunks
+info: System.Net.Http.HttpClient.ITextGenerator.LogicalHandler[100]
+      Start processing HTTP request POST https://api.groq.com/openai/v1/chat/completions
+info: System.Net.Http.HttpClient.ITextGenerator.ClientHandler[100]
+      Sending HTTP request POST https://api.groq.com/openai/v1/chat/completions
+info: System.Net.Http.HttpClient.ITextGenerator.ClientHandler[101]
+      Received HTTP response headers after 2089.5768ms - 200
+info: System.Net.Http.HttpClient.ITextGenerator.LogicalHandler[101]
+      End processing HTTP request after 2089.6839ms - 200
+info: SevilAI.Api.Controllers.AskController[0]
+      Received question: projelerin detaylarından bahseder misin
+info: SevilAI.Application.Services.QuestionAnsweringService[0]
+      Processing question: projelerin detaylarından bahseder misin
+info: SevilAI.Application.Services.QuestionAnsweringService[0]
+      Retrieved 5 relevant chunks
+info: System.Net.Http.HttpClient.ITextGenerator.LogicalHandler[100]
+      Start processing HTTP request POST https://api.groq.com/openai/v1/chat/completions
+info: System.Net.Http.HttpClient.ITextGenerator.ClientHandler[100]
+      Sending HTTP request POST https://api.groq.com/openai/v1/chat/completions
+info: System.Net.Http.HttpClient.ITextGenerator.ClientHandler[101]
+      Received HTTP response headers after 1433.9432ms - 200
+info: System.Net.Http.HttpClient.ITextGenerator.LogicalHandler[101]
+      End processing HTTP request after 1434.0039ms - 200
