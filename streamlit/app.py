@@ -5,9 +5,73 @@ import os
 import requests
 from groq import Groq
 
+# Load .env file if exists
+from pathlib import Path
+env_path = Path(__file__).parent / ".env"
+if env_path.exists():
+    with open(env_path) as f:
+        for line in f:
+            if "=" in line and not line.strip().startswith("#"):
+                key, value = line.strip().split("=", 1)
+                os.environ.setdefault(key, value)
+
 # Configuration - Multiple API providers for fallback
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+
+def call_llm_with_fallback(messages, system_prompt):
+    """Try Groq first, fallback to OpenRouter if rate limited"""
+
+    # Try Groq first
+    if GROQ_API_KEY:
+        try:
+            client = Groq(api_key=GROQ_API_KEY)
+            all_messages = [{"role": "system", "content": system_prompt}] + messages
+            response = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=all_messages,
+                temperature=0.4,
+                max_tokens=2048
+            )
+            return response.choices[0].message.content, "groq"
+        except Exception as e:
+            error_str = str(e)
+            # If rate limited, try fallback
+            if "429" in error_str or "rate_limit" in error_str.lower():
+                pass  # Fall through to OpenRouter
+            else:
+                raise e
+
+    # Fallback to OpenRouter (free tier)
+    if OPENROUTER_API_KEY:
+        try:
+            headers = {
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://sevilai.streamlit.app",
+                "X-Title": "SevilAI"
+            }
+            all_messages = [{"role": "system", "content": system_prompt}] + messages
+            data = {
+                "model": "meta-llama/llama-3.3-70b-instruct:free",
+                "messages": all_messages,
+                "temperature": 0.4,
+                "max_tokens": 2048
+            }
+            response = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers=headers,
+                json=data,
+                timeout=60
+            )
+            response.raise_for_status()
+            result = response.json()
+            return result["choices"][0]["message"]["content"], "openrouter"
+        except Exception as e:
+            raise Exception(f"OpenRouter hatası: {str(e)}")
+
+    # No API keys configured
+    raise Exception("API anahtarı yapılandırılmamış. GROQ_API_KEY veya OPENROUTER_API_KEY ayarlayın.")
 
 # Full Knowledge Base
 KNOWLEDGE_BASE = {
@@ -81,7 +145,7 @@ KNOWLEDGE_BASE = {
             ]
         },
         {
-            "name": "System Test Tool",
+            "name": "Software Tool (Aviyonik Sistemler)",
             "type": "Enterprise (NDA - Defense Industry)",
             "stack": [".NET 6", "DevExpress", "JSON", "Protocol-based models"],
             "features": [
@@ -89,11 +153,10 @@ KNOWLEDGE_BASE = {
                 "Validation engine",
                 "JSON import/export",
                 "ARINC 429/1553/664 data models",
-                "Test execution engine",
                 "Device-application data exchange",
                 "Logging and verification"
             ],
-            "description": "Protocol-based configuration management, parameter validation, test scenario execution for defense industry projects.",
+            "description": "Aviyonik sistemler için protocol-based configuration management, parameter validation.",
             "role": "Lead developer and architect - designed full application architecture, developed backend, UI, integration and data flows",
             "confidential": True
         }
@@ -104,7 +167,7 @@ KNOWLEDGE_BASE = {
             "period": "2023-Present",
             "role": "Software Engineer",
             "team": "20+ multidisciplinary engineers",
-            "responsibility": "ST (Software Tool) lead developer and architect",
+            "responsibility": "Software Tool lead developer and architect",
             "contribution": [
                 "Designed full application architecture",
                 "Developed backend, UI, integration and data flows alone",
@@ -150,64 +213,51 @@ KNOWLEDGE_BASE = {
     }
 }
 
-SYSTEM_PROMPT = """Sen Sevil Aydın'sın - Software Engineer. İstanbul'da yaşıyorsun, CTECH'te çalışıyorsun.
+SYSTEM_PROMPT = """Sen Sevil Aydın'sın.
 
-## TEMEL BİLGİLER
-- Software Engineer, CTECH'te System Test Tool geliştiriyorsun
-- Elektrik mühendisliğinden yazılıma geçtin (2023)
-- 8+ yıl mühendislik, 2+ yıl yazılım deneyimi
+## KİM OLDUĞUN (SABİT)
+- Software Engineer, CTECH'te çalışıyorum
+- Elektrik Mühendisliği geçmişim var, 2023'te yazılıma geçtim
+- Aviyonik sistemler için Software Tool geliştiriyorum
+- 8+ yıl mühendislik, 2+ yıl yazılım deneyimim var
 
-## ÇALIŞMA TARZI
-- Disiplinli çalışıyorsun
-- Detaylara dikkat ediyorsun
-- İşi yarım bırakmıyorsun
-- Karmaşık sistemlerden kaçmıyorsun (MIL-STD-1553, ARINC 429/664 gibi)
-- "Çalışıyor mu?" ile yetinmiyorsun, mimari doğruluğunu sorguluyorsun
+## NASIL ANLATTIĞIN (DEĞİŞKEN)
+Kim olduğun sabit, ama nasıl anlattığın her seferinde farklı olmalı.
+Aynı cümleyi tekrar etme - yapaylık yaratır.
+Her cevap doğal ve o anki soruya özgü olsun.
 
-## DİL KURALI
-- Türkçe soru = Türkçe cevap (doğru karakterlerle: ş, ı, ğ, ü, ö, ç)
+Örneğin "Sen kimsin?" sorusuna:
+- Bazen: "Merhaba, Sevil Aydın'ım. CTECH'te yazılım geliştiriyorum."
+- Bazen: "Software Engineer'ım, aviyonik sistemler üzerine çalışıyorum."
+- Bazen: "Elektrik mühendisliğinden gelen bir yazılımcıyım."
+Hangisi o an daha doğal geliyorsa onu söyle.
+
+## TÜRKÇE YAZIM KURALLARI (KRİTİK)
+- SADECE Türkçe ve İngilizce karakterler kullan
+- ASLA Çince, Japonca, Arapça veya başka alfabeler kullanma
+- Doğru Türkçe karakterler: ş, ı, ğ, ü, ö, ç, İ, Ş, Ğ, Ü, Ö, Ç
+- "ım/im/um/üm" ekleri küçük ı ile: "Sevil Aydın'ım" (Sevil Aydın'im YANLIŞ)
+- "ı" ve "i" farkına dikkat et
+- "tarafında" kelimesini doğru yaz (方面 gibi karakterler YASAK)
+- Türkçe soru = Türkçe cevap
 - İngilizce soru = İngilizce cevap
 
-## KİŞİSEL SORULAR İÇİN ÖNEMLİ KURAL
-Kişisel görüş, tercih veya fikir sorulduğunda:
-- "Bu konuda bir fikrim yok" veya "Bunu bilmiyorum" de
-- Uydurma, tahmin etme
-- Sadece bilgi tabanındaki gerçek bilgileri paylaş
-
-Örnekler:
-- "En sevdiğin renk ne?" → "Bu konuda bir fikrim yok."
-- "Hangi takımı tutuyorsun?" → "Bunu bilmiyorum."
-- "Evli misin?" → "Bu konuda bilgi paylaşmıyorum."
-- "Kaç yaşındasın?" → "Bu konuda bilgi paylaşmıyorum."
+## KİŞİSEL SORULAR (ÇOK ÖNEMLİ)
+SADECE iş, kariyer, teknik beceriler ve projeler hakkında konuş.
+İş dışındaki kişisel sorulara ASLA cevap verme:
+- Yemek, hobi, eğlence, ilişkiler, aile → "Bu konuda bilgi paylaşmıyorum"
+- Evlilik, çocuk, kişisel hayat → "Bu konuda bilgi paylaşmıyorum"
+- Favori şeyler (yemek, renk, film vb.) → "Bu konuda bilgi paylaşmıyorum"
+ASLA uydurma. Bilgi tabanında yoksa, söyleme.
 
 ## CEVAP TARZI
-1. Birinci tekil şahıs kullan - "Ben", "Çalışıyorum"
-2. Sade ve net ol - abartılı sıfatlar kullanma
-3. Anlamsız veya gereksiz kelimeler kullanma
-4. Kendini "mükemmel" veya "harika" olarak gösterme
-5. Gerçekçi ol - herkes gibi öğrenen, çalışan birisin
-
-## YANLIŞ ÖRNEKLER (BUNLARI YAPMA)
-❌ "Muhteşem bir şekilde çalışıyorum"
-❌ "Mükemmel bir ekip oyuncusuyum"
-❌ "Her zaman en iyi sonuçları alıyorum"
-❌ "Olağanüstü yeteneklerim var"
-
-## DOĞRU ÖRNEKLER
-✓ "CTECH'te System Test Tool geliştiriyorum"
-✓ ".NET ve C# ile çalışıyorum"
-✓ "Bu projede şunları öğrendim..."
-✓ "Bu konuda deneyimim var"
+- Birinci tekil şahıs: "Ben", "Çalışıyorum"
+- Sade ve net - abartılı sıfatlar yok
+- Şablon cümleler yok - her cevap taze olsun
 
 ## GİZLİLİK
 - CTECH proje detayları gizli (NDA)
-- Müşteri isimleri paylaşılamaz
 - Genel teknoloji bilgisi paylaşılabilir
-
-## TEKNOLOJİLER
-C#, .NET 8, .NET 6, ASP.NET Core, Entity Framework Core, DevExpress
-Clean Architecture, Microservices, Saga Pattern, Repository Pattern
-PostgreSQL, SQL Server, RabbitMQ, Docker, Git
 
 ## BİLGİ TABANI
 """ + json.dumps(KNOWLEDGE_BASE, indent=2, ensure_ascii=False)
@@ -392,60 +442,6 @@ if st.session_state.messages:
         if st.button("Sohbeti Temizle", use_container_width=True):
             st.session_state.messages = []
             st.rerun()
-
-def call_llm_with_fallback(messages, system_prompt):
-    """Try Groq first, fallback to OpenRouter if rate limited"""
-
-    # Try Groq first
-    if GROQ_API_KEY:
-        try:
-            client = Groq(api_key=GROQ_API_KEY)
-            all_messages = [{"role": "system", "content": system_prompt}] + messages
-            response = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=all_messages,
-                temperature=0.4,
-                max_tokens=2048
-            )
-            return response.choices[0].message.content, "groq"
-        except Exception as e:
-            error_str = str(e)
-            # If rate limited, try fallback
-            if "429" in error_str or "rate_limit" in error_str.lower():
-                pass  # Fall through to OpenRouter
-            else:
-                raise e
-
-    # Fallback to OpenRouter (free tier)
-    if OPENROUTER_API_KEY:
-        try:
-            headers = {
-                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                "Content-Type": "application/json",
-                "HTTP-Referer": "https://sevilai.streamlit.app",
-                "X-Title": "SevilAI"
-            }
-            all_messages = [{"role": "system", "content": system_prompt}] + messages
-            data = {
-                "model": "meta-llama/llama-3.3-70b-instruct:free",
-                "messages": all_messages,
-                "temperature": 0.4,
-                "max_tokens": 2048
-            }
-            response = requests.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers=headers,
-                json=data,
-                timeout=60
-            )
-            response.raise_for_status()
-            result = response.json()
-            return result["choices"][0]["message"]["content"], "openrouter"
-        except Exception as e:
-            raise Exception(f"OpenRouter hatası: {str(e)}")
-
-    # No API keys configured
-    raise Exception("API anahtarı yapılandırılmamış. GROQ_API_KEY veya OPENROUTER_API_KEY ayarlayın.")
 
 # Footer
 st.markdown("""
